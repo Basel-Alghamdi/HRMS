@@ -1,0 +1,47 @@
+{
+  "name": "hris-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HRIS Platform - Human Resources Information System",
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "prepare": "husky",
+    "docker:up": "docker compose --env-file .env.docker up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:restart": "docker compose restart",
+    "docker:ps": "docker compose ps",
+    "docker:stop": "docker compose stop",
+    "docker:reset": "docker compose down -v && docker compose --env-file .env.docker up -d",
+    "docker:prune": "docker system prune -af --volumes",
+    "docker:with-admin": "docker compose --profile with-admin-tools --env-file .env.docker up -d",
+    "docker:with-es": "docker compose --profile with-elasticsearch --env-file .env.docker up -d",
+    "docker:with-all": "docker compose --profile with-admin-tools --profile with-elasticsearch --env-file .env.docker up -d"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.0.0",
+    "prettier": "^3.2.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.0"
+  }
+}

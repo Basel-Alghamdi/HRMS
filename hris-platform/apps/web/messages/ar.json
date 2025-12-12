@@ -1,0 +1,57 @@
+{
+  "common": {
+    "welcome": "مرحباً",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات",
+    "loading": "جار التحميل...",
+    "error": "حدث خطأ",
+    "success": "نجح",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "back": "رجوع"
+  },
+  "auth": {
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "rememberMe": "تذكرني",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "loginTitle": "تسجيل الدخول",
+    "loginSubtitle": "أدخل بياناتك للوصول إلى حسابك",
+    "forgotPasswordTitle": "استعادة كلمة المرور",
+    "forgotPasswordSubtitle": "أدخل بريدك الإلكتروني لاستلام رابط إعادة تعيين كلمة المرور",
+    "resetPasswordTitle": "إعادة تعيين كلمة المرور",
+    "resetPasswordSubtitle": "أدخل كلمة المرور الجديدة لحسابك",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "sendLink": "إرسال الرابط",
+    "setPassword": "تعيين كلمة المرور",
+    "backToLogin": "العودة لتسجيل الدخول",
+    "linkSent": "تم إرسال الرابط!",
+    "linkSentMessage": "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+    "passwordSet": "تم تعيين كلمة المرور!",
+    "passwordSetMessage": "تم إعادة تعيين كلمة المرور بنجاح. سيتم توجيهك إلى صفحة تسجيل الدخول..."
+  },
+  "employee": {
+    "title": "الموظفون",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "position": "المنصب",
+    "department": "القسم",
+    "hireDate": "تاريخ التوظيف"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcomeMessage": "مرحباً بك في نظام إدارة الموارد البشرية",
+    "employeeInfo": "معلومات الموظف",
+    "quickActions": "الإجراءات السريعة",
+    "moreFeatures": "ستتوفر المزيد من الميزات قريباً..."
+  }
+}

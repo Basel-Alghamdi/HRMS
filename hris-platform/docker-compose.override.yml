@@ -1,0 +1,45 @@
+# docker-compose.override.yml
+# This file is used for local development overrides
+# It's automatically merged with docker-compose.yml
+# Add this file to .gitignore if you need machine-specific settings
+
+version: '3.9'
+
+services:
+  postgres:
+    # Uncomment to expose PostgreSQL logs
+    # logging:
+    #   driver: "json-file"
+    #   options:
+    #     max-size: "10m"
+    #     max-file: "3"
+
+    # Uncomment to add custom PostgreSQL configuration
+    # command:
+    #   - "postgres"
+    #   - "-c"
+    #   - "shared_buffers=256MB"
+    #   - "-c"
+    #   - "max_connections=200"
+
+  redis:
+    # Uncomment to disable Redis persistence for faster development
+    # command: redis-server --requirepass ${REDIS_PASSWORD:-hris_redis_pass}
+    pass
+
+  minio:
+    # Uncomment to add environment variables for development
+    # environment:
+    #   MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+    pass
+
+  # Uncomment to add a mailcatcher for testing emails
+  # mailcatcher:
+  #   image: schickling/mailcatcher
+  #   container_name: hris-mailcatcher
+  #   restart: unless-stopped
+  #   ports:
+  #     - "1080:1080"
+  #     - "1025:1025"
+  #   networks:
+  #     - hris-network

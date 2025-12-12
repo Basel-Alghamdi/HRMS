@@ -1,0 +1,176 @@
+version: '3.9'
+
+services:
+  # PostgreSQL 16 Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: hris-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hris_db}
+      POSTGRES_USER: ${POSTGRES_USER:-hris_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hris_password}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hris_user} -d ${POSTGRES_DB:-hris_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hris-network
+
+  # Redis 7+ Cache & Session Store
+  redis:
+    image: redis:7-alpine
+    container_name: hris-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-hris_redis_pass}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - hris-network
+
+  # MinIO S3-compatible Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: hris-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-hris_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-hris_minio_pass}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - hris-network
+
+  # MinIO Client - Creates default bucket on startup
+  minio-init:
+    image: minio/mc:latest
+    container_name: hris-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set minio http://minio:9000 ${MINIO_ROOT_USER:-hris_minio} ${MINIO_ROOT_PASSWORD:-hris_minio_pass};
+      mc mb --ignore-existing minio/${MINIO_DEFAULT_BUCKET:-hris-documents};
+      mc anonymous set download minio/${MINIO_DEFAULT_BUCKET:-hris-documents};
+      exit 0;
+      "
+    networks:
+      - hris-network
+
+  # Elasticsearch 8 - Full-text Search (Optional)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: hris-elasticsearch
+    restart: unless-stopped
+    environment:
+      - node.name=hris-es-node
+      - cluster.name=hris-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - hris-network
+    profiles:
+      - with-elasticsearch
+
+  # PgAdmin - PostgreSQL Web Interface (Optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: hris-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@hris.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hris-network
+    profiles:
+      - with-admin-tools
+
+  # Redis Commander - Redis Web Interface (Optional)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: hris-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-hris_redis_pass}
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - hris-network
+    profiles:
+      - with-admin-tools
+
+networks:
+  hris-network:
+    driver: bridge
+    name: hris-network
+
+volumes:
+  postgres_data:
+    name: hris_postgres_data
+  redis_data:
+    name: hris_redis_data
+  minio_data:
+    name: hris_minio_data
+  elasticsearch_data:
+    name: hris_elasticsearch_data
+  pgadmin_data:
+    name: hris_pgadmin_data

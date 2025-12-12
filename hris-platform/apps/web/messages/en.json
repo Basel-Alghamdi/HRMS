@@ -1,0 +1,27 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "login": "Login",
+    "logout": "Logout",
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "rememberMe": "Remember Me",
+    "forgotPassword": "Forgot Password?",
+    "signIn": "Sign In",
+    "signUp": "Sign Up"
+  },
+  "employee": {
+    "title": "Employees",
+    "name": "Name",
+    "email": "Email",
+    "position": "Position",
+    "department": "Department",
+    "hireDate": "Hire Date"
+  }
+}
