@@ -36,6 +36,8 @@ export * from './components/date-picker';
 export * from './components/time-picker';
 export * from './components/loading-spinner';
 export * from './components/empty-state';
+export * from './components/progress';
+export * from './components/dropdown-menu';
 
 // ============================================================================
 // Form Components

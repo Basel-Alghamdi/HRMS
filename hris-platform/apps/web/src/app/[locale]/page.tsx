@@ -1,18 +1,29 @@
-import { useTranslations } from 'next-intl';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
+import { LoadingSpinner } from '@hris/ui';
 
 export default function HomePage() {
-  const t = useTranslations('common');
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ar';
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (isAuthenticated) {
+      router.replace(`/${locale}/dashboard`);
+    } else {
+      router.replace(`/${locale}/login`);
+    }
+  }, [isAuthenticated, isLoading, router, locale]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold text-center mb-8">
-          {t('welcome')}
-        </h1>
-        <p className="text-center text-lg">
-          HRIS Platform - Employee Portal
-        </p>
-      </div>
-    </main>
+    <div className="flex min-h-screen items-center justify-center">
+      <LoadingSpinner size="lg" />
+    </div>
   );
 }

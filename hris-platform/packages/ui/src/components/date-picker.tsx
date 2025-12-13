@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -58,17 +60,27 @@ Calendar.displayName = 'Calendar';
 
 interface DatePickerProps {
   value?: Date;
+  selected?: Date;
   onChange?: (date: Date | undefined) => void;
+  onSelect?: (date: Date | undefined) => void;
   placeholder?: string;
-  disabled?: boolean;
+  disabled?: boolean | ((date: Date) => boolean);
+  locale?: typeof ar;
 }
 
 export function DatePicker({
   value,
+  selected,
   onChange,
+  onSelect,
   placeholder = 'اختر التاريخ',
   disabled,
+  locale = ar,
 }: DatePickerProps) {
+  const selectedDate = selected || value;
+  const handleSelect = onSelect || onChange;
+  const isButtonDisabled = typeof disabled === 'boolean' ? disabled : false;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -76,21 +88,22 @@ export function DatePicker({
           variant="outline"
           className={cn(
             'w-full justify-start text-start font-normal',
-            !value && 'text-muted-foreground',
+            !selectedDate && 'text-muted-foreground',
           )}
-          disabled={disabled}
+          disabled={isButtonDisabled}
         >
           <CalendarIcon className="ms-2 h-4 w-4" />
-          {value ? format(value, 'PPP', { locale: ar }) : <span>{placeholder}</span>}
+          {selectedDate ? format(selectedDate, 'PPP', { locale }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
-          selected={value}
-          onSelect={onChange}
+          selected={selectedDate}
+          onSelect={handleSelect}
           initialFocus
-          locale={ar}
+          locale={locale}
+          disabled={typeof disabled === 'function' ? disabled : undefined}
         />
       </PopoverContent>
     </Popover>

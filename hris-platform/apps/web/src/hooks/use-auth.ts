@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { api } from '@/lib/api-client';
 import type { LoginFormData } from '@/lib/validations';
 
 interface User {
@@ -10,12 +9,14 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
+  jobTitle?: string;
 }
 
 interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+  rememberMe?: boolean;
 }
 
 // Mock login for development (replace with real API later)
@@ -25,16 +26,25 @@ const mockLogin = async (data: LoginFormData): Promise<LoginResponse> => {
 
   // Mock validation
   if (data.email === 'admin@hris.sa' && data.password === 'Password123') {
+    const user = {
+      id: '1',
+      email: data.email,
+      firstName: 'أحمد',
+      lastName: 'محمد',
+      role: 'employee',
+      jobTitle: 'مطور برمجيات',
+    };
+
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hris_user', JSON.stringify(user));
+    }
+
     return {
       accessToken: 'mock-access-token',
       refreshToken: 'mock-refresh-token',
-      user: {
-        id: '1',
-        email: data.email,
-        firstName: 'أحمد',
-        lastName: 'محمد',
-        role: 'employee',
-      },
+      user,
+      rememberMe: data.rememberMe,
     };
   }
 
@@ -44,10 +54,36 @@ const mockLogin = async (data: LoginFormData): Promise<LoginResponse> => {
 // Mock get current user
 const mockGetUser = async (): Promise<User | null> => {
   const token = Cookies.get('access_token');
-  if (!token) return null;
+
+  if (!token) {
+    // Try to restore from localStorage
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('hris_user');
+      if (storedUser) {
+        try {
+          return JSON.parse(storedUser);
+        } catch {
+          localStorage.removeItem('hris_user');
+        }
+      }
+    }
+    return null;
+  }
 
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Try to restore from localStorage first
+  if (typeof window !== 'undefined') {
+    const storedUser = localStorage.getItem('hris_user');
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch {
+        // Fallback to default mock user
+      }
+    }
+  }
 
   return {
     id: '1',
@@ -55,12 +91,31 @@ const mockGetUser = async (): Promise<User | null> => {
     firstName: 'أحمد',
     lastName: 'محمد',
     role: 'employee',
+    jobTitle: 'مطور برمجيات',
+  };
+};
+
+// Mock refresh token
+const mockRefreshToken = async (): Promise<{ accessToken: string }> => {
+  const refreshToken = Cookies.get('refresh_token');
+  if (!refreshToken) {
+    throw new Error('No refresh token');
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  return {
+    accessToken: 'mock-new-access-token',
   };
 };
 
 export function useAuth() {
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
+
+  // Extract locale from pathname
+  const locale = pathname?.match(/^\/(ar|en)/)?.[1] || 'ar';
 
   // Get current user
   const {
@@ -80,17 +135,17 @@ export function useAuth() {
     onSuccess: (data) => {
       // Store tokens
       Cookies.set('access_token', data.accessToken, {
-        expires: data.rememberMe ? 30 : undefined, // 30 days if remember me
+        expires: data.rememberMe ? 30 : 7, // 30 days if remember me, 7 days otherwise
       });
       Cookies.set('refresh_token', data.refreshToken, {
-        expires: data.rememberMe ? 30 : undefined,
+        expires: data.rememberMe ? 30 : 7,
       });
 
       // Update user in cache
       queryClient.setQueryData(['user'], data.user);
 
       // Redirect to dashboard
-      router.push('/ar/dashboard');
+      router.push(`/${locale}/dashboard`);
     },
   });
 
@@ -105,12 +160,25 @@ export function useAuth() {
       Cookies.remove('access_token');
       Cookies.remove('refresh_token');
 
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('hris_user');
+      }
+
       // Clear user from cache
       queryClient.setQueryData(['user'], null);
       queryClient.clear();
 
       // Redirect to login
-      router.push('/ar/login');
+      router.push(`/${locale}/login`);
+    },
+  });
+
+  // Refresh token mutation
+  const refreshTokenMutation = useMutation({
+    mutationFn: mockRefreshToken,
+    onSuccess: (data) => {
+      Cookies.set('access_token', data.accessToken, { expires: 7 });
     },
   });
 
@@ -120,6 +188,7 @@ export function useAuth() {
     isLoading,
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutate,
+    refreshToken: refreshTokenMutation.mutate,
     isLoggingIn: loginMutation.isPending,
     loginError: loginMutation.error,
   };

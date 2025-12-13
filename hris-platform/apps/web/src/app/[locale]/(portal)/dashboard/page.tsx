@@ -1,56 +1,74 @@
 'use client';
 
+import * as React from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Button, Card, CardHeader, CardTitle, CardContent } from '@hris/ui';
+import { useDashboard } from '@/hooks/use-dashboard';
+import { AttendanceWidget } from '@/components/dashboard/attendance-widget';
+import { LeaveBalanceCards } from '@/components/dashboard/leave-balance-cards';
+import { QuickActions } from '@/components/dashboard/quick-actions';
+import { RecentPayslips } from '@/components/dashboard/recent-payslips';
+import { PendingRequests } from '@/components/dashboard/pending-requests';
+import { LoadingSpinner } from '@hris/ui';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { data, isLoading, checkIn, checkOut } = useDashboard();
+
+  const handleAttendanceAction = () => {
+    if (data?.attendance.status === 'not_checked_in') {
+      checkIn();
+    } else if (data?.attendance.status === 'checked_in') {
+      checkOut();
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">مرحباً، {user?.firstName}!</h1>
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div>
+        <h1 className="text-3xl font-bold">
+          مرحباً، {user?.firstName} {user?.lastName} 👋
+        </h1>
         <p className="mt-2 text-muted-foreground">
-          مرحباً بك في نظام إدارة الموارد البشرية
+          {format(new Date(), 'EEEE، d MMMM yyyy', { locale: ar })}
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>معلومات الموظف</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="space-y-2 text-sm">
-              <div>
-                <dt className="font-medium text-muted-foreground">الاسم:</dt>
-                <dd>{user?.firstName} {user?.lastName}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-muted-foreground">البريد:</dt>
-                <dd>{user?.email}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-muted-foreground">الدور:</dt>
-                <dd>{user?.role}</dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
+      {/* Attendance & Quick Actions Row */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <AttendanceWidget
+          status={data?.attendance.status || 'not_checked_in'}
+          checkInTime={data?.attendance.checkInTime}
+          checkOutTime={data?.attendance.checkOutTime}
+          onCheckIn={() => handleAttendanceAction()}
+          onCheckOut={() => handleAttendanceAction()}
+        />
+        <QuickActions
+          attendanceStatus={data?.attendance.status || 'not_checked_in'}
+          onAttendanceAction={handleAttendanceAction}
+        />
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>الإجراءات السريعة</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              ستتوفر المزيد من الميزات قريباً...
-            </p>
-            <Button onClick={() => logout()} variant="outline" className="w-full">
-              تسجيل الخروج
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Leave Balance Cards */}
+      <div>
+        <h2 className="mb-4 text-xl font-semibold">رصيد الإجازات</h2>
+        <LeaveBalanceCards balances={data?.leaveBalances || []} />
+      </div>
+
+      {/* Recent Activity Row */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <RecentPayslips payslips={data?.payslips || []} />
+        <PendingRequests requests={data?.leaveRequests || []} />
       </div>
     </div>
   );
